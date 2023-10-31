@@ -2,7 +2,7 @@ local curl = require('plenary.curl')
 local cache = {}
 
 
-local prompt = '❓ '
+local prompt = '❓'
 
 
 local fetch = function (query)
@@ -77,8 +77,9 @@ local create_buffer = function (_)
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, true, { prompt })
   vim.api.nvim_win_set_buf(0, buf)
-  vim.api.nvim_win_set_cursor(0, { 1, #prompt + 1 })
   vim.keymap.set('i', '<CR>', ask(buf), { silent = true, buffer = buf })
+  vim.cmd.startinsert()
+  vim.api.nvim_win_set_cursor(0, { 1, #prompt + 1 })
 end
 
 vim.api.nvim_create_user_command(
