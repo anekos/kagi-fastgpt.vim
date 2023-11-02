@@ -33,33 +33,35 @@ end
 
 
 local new_query = function (buf, query)
-    vim.api.nvim_buf_set_lines(buf, -1, -1, true, { '...waiting...' })
+  vim.api.nvim_buf_set_lines(buf, -1, -1, true, { '...waiting...' })
 
-    go_last_line(buf)
-    vim.api.nvim_command('redraw')
+  go_last_line(buf)
+  vim.api.nvim_command('redraw')
 
-    local output = { '' }
+  local output = { '' }
 
-    local body = fetch(query)
+  local body = fetch(query)
 
-    vim.api.nvim_buf_set_lines(buf, -2, -1, true, {})
 
-    for _, l in ipairs(vim.fn.split(body.data.output, '\n')) do
-      table.insert(output, l)
+
+  vim.api.nvim_buf_set_lines(buf, -2, -1, true, {})
+
+  for _, l in ipairs(vim.fn.split(body.data.output, '\n')) do
+    table.insert(output, l)
+  end
+  table.insert(output, '')
+  if body.data.references then
+    for i, ref in ipairs(body.data.references) do
+      table.insert(output, '[' .. tostring(i) .. '] ' .. ref.title .. ' ' .. ref.url)
     end
-    table.insert(output, '')
-    if body.data.references then
-      for i, ref in ipairs(body.data.references) do
-        table.insert(output, '[' .. tostring(i) .. '] ' .. ref.title .. ' ' .. ref.url)
-      end
-    end
+  end
 
-    table.insert(output, '')
-    table.insert(output, prompt)
+  table.insert(output, '')
+  table.insert(output, prompt)
 
-    vim.api.nvim_buf_set_lines(buf, -1, -1, true, output)
+  vim.api.nvim_buf_set_lines(buf, -1, -1, true, output)
 
-    go_last_line(buf)
+  go_last_line(buf)
 end
 
 
