@@ -5,7 +5,7 @@ local cache = {}
 local prompt = '❓'
 
 
-local fetch = function (query)
+local fetch = function (query, callback)
   if cache[query] then
     return cache[query]
   end
@@ -19,11 +19,13 @@ local fetch = function (query)
       ['Content-Type'] = 'application/json',
       ['Authorization'] = 'Bot ' .. vim.env['KAGI_API_KEY'],
     },
+    callback = function (resp)
+      vim.schedule(function ()
+        local result = vim.fn.json_decode(resp.body)
+        cache[query] = result
+        callback(result) end)
+    end,
   }
-
-  local result = vim.fn.json_decode(resp.body)
-  cache[query] = result
-  return result
 end
 
 
@@ -36,32 +38,31 @@ local new_query = function (buf, query)
   vim.api.nvim_buf_set_lines(buf, -1, -1, true, { '...waiting...' })
 
   go_last_line(buf)
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, true, true), 'n', true)
   vim.api.nvim_command('redraw')
 
   local output = { '' }
 
-  local body = fetch(query)
+  fetch(query, function (body)
+    vim.api.nvim_buf_set_lines(buf, -2, -1, true, {})
 
-
-
-  vim.api.nvim_buf_set_lines(buf, -2, -1, true, {})
-
-  for _, l in ipairs(vim.fn.split(body.data.output, '\n')) do
-    table.insert(output, l)
-  end
-  table.insert(output, '')
-  if body.data.references then
-    for i, ref in ipairs(body.data.references) do
-      table.insert(output, '[' .. tostring(i) .. '] ' .. ref.title .. ' ' .. ref.url)
+    for _, l in ipairs(vim.fn.split(body.data.output, '\n')) do
+      table.insert(output, l)
     end
-  end
+    table.insert(output, '')
+    if body.data.references then
+      for i, ref in ipairs(body.data.references) do
+        table.insert(output, '[' .. tostring(i) .. '] ' .. ref.title .. ' ' .. ref.url)
+      end
+    end
 
-  table.insert(output, '')
-  table.insert(output, prompt)
+    table.insert(output, '')
+    table.insert(output, prompt)
 
-  vim.api.nvim_buf_set_lines(buf, -1, -1, true, output)
+    vim.api.nvim_buf_set_lines(buf, -1, -1, true, output)
 
-  go_last_line(buf)
+    go_last_line(buf)
+  end)
 end
 
 
